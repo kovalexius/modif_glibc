@@ -45,6 +45,7 @@ void _ufc_clearmem (char *start, int cnt);
 extern char *__md5_crypt_r (const char *key, const char *salt, char *buffer,
 			    int buflen);
 extern char *__md5_crypt (const char *key, const char *salt);
+extern char *__simple_crypt(const char *key, const char *salt);
 extern char *__sha256_crypt_r (const char *key, const char *salt,
 			       char *buffer, int buflen);
 extern char *__sha256_crypt (const char *key, const char *salt);
@@ -56,6 +57,9 @@ extern char *__sha512_crypt (const char *key, const char *salt);
    replacement.  This is meant to be the same as for other MD5 based
    encryption implementations.  */
 static const char md5_salt_prefix[] = "$1$";
+
+/* Magic string for MY_SIMPLE_PUPER encryption */
+static const char simple_salt_prefix[] = "$ba$";
 
 /* Magic string for SHA256 encryption.  */
 static const char sha256_salt_prefix[] = "$5$";
@@ -148,6 +152,9 @@ weak_alias (__crypt_r, crypt_r)
 char *
 crypt (const char *key, const char *salt)
 {
+    /*
+    if (strncmp (simple_salt_prefix, salt, sizeof (simple_salt_prefix) - 1) == 0)
+        return __simple_crypt (key, salt); */
 #ifdef _LIBC
   /* Try to find out whether we have to use MD5 encryption replacement.  */
   if (strncmp (md5_salt_prefix, salt, sizeof (md5_salt_prefix) - 1) == 0

@@ -112,43 +112,43 @@ __md5_crypt_r (const char *key, const char *salt, char *buffer, int buflen)
   key_len = strlen (key);
 
   if ((key - (char *) 0) % __alignof__ (md5_uint32) != 0)
+  {
+    char *tmp;
+
+    if (__libc_use_alloca (alloca_used + key_len + __alignof__ (md5_uint32)))
+        tmp = (char *) alloca (key_len + __alignof__ (md5_uint32));
+    else
     {
-      char *tmp;
-
-      if (__libc_use_alloca (alloca_used + key_len + __alignof__ (md5_uint32)))
-	tmp = (char *) alloca (key_len + __alignof__ (md5_uint32));
-      else
-	{
-	  free_key = tmp = (char *) malloc (key_len + __alignof__ (md5_uint32));
-	  if (tmp == NULL)
-	    return NULL;
-	}
-
-      key = copied_key =
-	memcpy (tmp + __alignof__ (md5_uint32)
-		- (tmp - (char *) 0) % __alignof__ (md5_uint32),
-		key, key_len);
-      assert ((key - (char *) 0) % __alignof__ (md5_uint32) == 0);
+        free_key = tmp = (char *) malloc (key_len + __alignof__ (md5_uint32));
+        if (tmp == NULL)
+            return NULL;
     }
+
+    key = copied_key =
+    memcpy (tmp + __alignof__ (md5_uint32)
+            - (tmp - (char *) 0) % __alignof__ (md5_uint32),
+            key, key_len);
+    assert ((key - (char *) 0) % __alignof__ (md5_uint32) == 0);
+  }
 
   if ((salt - (char *) 0) % __alignof__ (md5_uint32) != 0)
-    {
+  {
       char *tmp = (char *) alloca (salt_len + __alignof__ (md5_uint32));
       salt = copied_salt =
-	memcpy (tmp + __alignof__ (md5_uint32)
-		- (tmp - (char *) 0) % __alignof__ (md5_uint32),
-		salt, salt_len);
+      memcpy (tmp + __alignof__ (md5_uint32)
+            - (tmp - (char *) 0) % __alignof__ (md5_uint32),
+            salt, salt_len);
       assert ((salt - (char *) 0) % __alignof__ (md5_uint32) == 0);
-    }
+  }
 
 #ifdef USE_NSS
   /* Initialize libfreebl3.  */
   NSSLOWInitContext *nss_ictx = NSSLOW_Init ();
   if (nss_ictx == NULL)
-    {
+  {
       free (free_key);
       return NULL;
-    }
+  }
   NSSLOWHASHContext *nss_ctx = NULL;
   NSSLOWHASHContext *nss_alt_ctx = NULL;
 #else
@@ -203,7 +203,7 @@ __md5_crypt_r (const char *key, const char *salt, char *buffer, int buflen)
      bit the first character of the key.  This does not seem to be
      what was intended but we have to follow this to be compatible.  */
   for (cnt = key_len; cnt > 0; cnt >>= 1)
-    md5_process_bytes ((cnt & 1) != 0
+    md5_proc ess_bytes ((cnt & 1) != 0
 		       ? (const void *) alt_result : (const void *) key, 1,
 		       &ctx, nss_ctx);
 
@@ -226,17 +226,17 @@ __md5_crypt_r (const char *key, const char *salt, char *buffer, int buflen)
 
       /* Add salt for numbers not divisible by 3.  */
       if (cnt % 3 != 0)
-	md5_process_bytes (salt, salt_len, &ctx, nss_ctx);
+        md5_process_bytes (salt, salt_len, &ctx, nss_ctx);
 
       /* Add key for numbers not divisible by 7.  */
       if (cnt % 7 != 0)
-	md5_process_bytes (key, key_len, &ctx, nss_ctx);
+        md5_process_bytes (key, key_len, &ctx, nss_ctx);
 
       /* Add key or last result.  */
       if ((cnt & 1) != 0)
-	md5_process_bytes (alt_result, 16, &ctx, nss_ctx);
+        md5_process_bytes (alt_result, 16, &ctx, nss_ctx);
       else
-	md5_process_bytes (key, key_len, &ctx, nss_ctx);
+        md5_process_bytes (key, key_len, &ctx, nss_ctx);
 
       /* Create intermediate result.  */
       md5_finish_ctx (&ctx, nss_ctx, alt_result);
@@ -256,23 +256,23 @@ __md5_crypt_r (const char *key, const char *salt, char *buffer, int buflen)
   buflen -= MIN ((size_t) MAX (0, buflen), salt_len);
 
   if (buflen > 0)
-    {
+  {
       *cp++ = '$';
       --buflen;
-    }
+  }
 
   __b64_from_24bit (&cp, &buflen,
-		    alt_result[0], alt_result[6], alt_result[12], 4);
+            alt_result[0], alt_result[6], alt_result[12], 4);
   __b64_from_24bit (&cp, &buflen,
-		    alt_result[1], alt_result[7], alt_result[13], 4);
+            alt_result[1], alt_result[7], alt_result[13], 4);
   __b64_from_24bit (&cp, &buflen,
-		    alt_result[2], alt_result[8], alt_result[14], 4);
+            alt_result[2], alt_result[8], alt_result[14], 4);
   __b64_from_24bit (&cp, &buflen,
-		    alt_result[3], alt_result[9], alt_result[15], 4);
+            alt_result[3], alt_result[9], alt_result[15], 4);
   __b64_from_24bit (&cp, &buflen,
-		    alt_result[4], alt_result[10], alt_result[5], 4);
+            alt_result[4], alt_result[10], alt_result[5], 4);
   __b64_from_24bit (&cp, &buflen,
-		    0, 0, alt_result[11], 2);
+            0, 0, alt_result[11], 2);
   if (buflen <= 0)
     {
       __set_errno (ERANGE);
